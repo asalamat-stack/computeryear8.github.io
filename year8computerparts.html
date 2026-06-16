@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alien PC Defender V3</title>
+<style>
+body{
+margin:0;font-family:Arial,sans-serif;color:white;text-align:center;
+background:#0f172a;
+background-image:radial-gradient(circle,#ffffff33 1px,transparent 1px);
+background-size:40px 40px;
+}
+.wrap{max-width:1000px;margin:auto;padding:15px}
+.panel{background:#1e293bcc;padding:15px;border-radius:14px;margin:12px}
+.stats{display:flex;justify-content:center;gap:15px;flex-wrap:wrap}
+.stat{background:#334155;padding:10px 15px;border-radius:10px}
+#alien{font-size:110px;transition:.2s}
+.hit{animation:shake .3s}
+@keyframes shake{
+0%{transform:translateX(0)}
+25%{transform:translateX(-8px)}
+50%{transform:translateX(8px)}
+75%{transform:translateX(-8px)}
+100%{transform:translateX(0)}
+}
+.bar{height:24px;background:#334155;border-radius:20px;overflow:hidden;margin:auto}
+.enemyBar{width:650px;max-width:95%}
+.playerBar{width:300px}
+.fill{height:100%}
+#enemyFill{background:#22c55e}
+#playerFill{background:#3b82f6}
+#question{font-size:30px}
+button{
+width:min(700px,90%);
+padding:16px;
+font-size:22px;
+margin:8px;
+border:none;
+border-radius:10px;
+cursor:pointer
+}
+button:hover{transform:scale(1.02)}
+.part{
+display:inline-block;
+padding:8px 12px;
+margin:5px;
+border-radius:8px;
+background:#334155
+}
+.done{
+background:#16a34a;
+box-shadow:0 0 12px #16a34a
+}
+#msg{font-size:26px;font-weight:bold;height:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>👾 Alien PC Defender V3</h1>
+
+<div class="stats">
+<div class="stat">⭐ XP <span id="xp">0</span></div>
+<div class="stat">🪙 Coins <span id="coins">0</span></div>
+<div class="stat">❤️ Lives <span id="lives">3</span></div>
+<div class="stat">🏆 Level <span id="level">1</span></div>
+</div>
+
+<div class="panel">
+<h2 id="bossName">Alien Scout</h2>
+<div id="alien">👾</div>
+<div class="bar enemyBar"><div id="enemyFill" class="fill"></div></div>
+<div id="enemyHp"></div>
+</div>
+
+<div class="panel">
+<h3>🧑‍🚀 Your HP</h3>
+<div class="bar playerBar"><div id="playerFill" class="fill"></div></div>
+<div id="playerHp"></div>
+</div>
+
+<div class="panel">
+<div id="msg"></div>
+<h2 id="question"></h2>
+<div id="answers"></div>
+</div>
+
+<div class="panel">
+<h3>🖥️ Build Your PC</h3>
+<div id="parts"></div>
+</div>
+
+</div>
+
+<script>
+const bosses=["Alien Scout","Lag Monster","Power Vampire","Motherboard Overlord","GPU Destroyer","Tech Titan"];
+const parts=["Motherboard","CPU","RAM","GPU","SSD","PSU"];
+
+const questions=[
+["Brain of the computer?","CPU"],["Creates graphics?","GPU"],["Supplies power?","PSU"],
+["Stores files permanently?","SSD"],["Stores data temporarily?","RAM"],
+["Connects all components?","Motherboard"],["CPU stands for?","Central Processing Unit"],
+["GPU stands for?","Graphics Processing Unit"],["RAM stands for?","Random Access Memory"],
+["PSU stands for?","Power Supply Unit"],["Monitor is what type?","Output Device"],
+["Keyboard is what type?","Input Device"],["Mouse is what type?","Input Device"],
+["Printer is what type?","Output Device"],["Best part for gaming graphics?","GPU"],
+["Without PSU computer will?","Not Turn On"],["CPU performs?","Calculations"],
+["Operating system installed on?","SSD"],["SSD faster than?","HDD"],
+["Fan used for?","Cooling"],["More RAM helps?","Multitasking"],
+["Main circuit board?","Motherboard"],["Webcam is?","Input Device"],
+["Speakers are?","Output Device"],["Microphone is?","Input Device"],
+["Linux is a?","Operating System"],["Windows is a?","Operating System"],
+["Binary uses how many digits?","2"],["Internet is a type of?","Network"],
+["Router connects to?","Internet"],["RAM loses data when off?","Yes"],
+["Permanent storage?","SSD"],["Temporary memory?","RAM"],
+["Component upgraded for games?","GPU"],["CPU follows?","Instructions"],
+["Storage measured in?","GB"],["RAM measured in?","GB"],
+["Cooling prevents?","Overheating"],["CPU plugs into?","Motherboard"],
+["RAM plugs into?","Motherboard"],["GPU used for?","Graphics"],
+["Power cable connects to?","PSU"],["Laptop touchpad is?","Input Device"],
+["Case protects?","Hardware"],["Documents stored on?","SSD"],
+["Photos stored on?","SSD"],["Games stored on?","SSD"],
+["Network of computers?","Network"],["WiFi is?","Wireless"],
+["Binary digits are?","0 and 1"],["CPU gets hot because?","Processing"],
+["Motherboard acts as?","Communication Hub"],["What stores programs?","SSD"],
+["Which component calculates?","CPU"],["Which component renders games?","GPU"],
+["Which component supplies electricity?","PSU"],["Which component loses data when off?","RAM"],
+["Which component needs cooling most?","CPU"],["What is macOS?","Operating System"]
+];
+
+const wrong=["CPU","GPU","RAM","SSD","PSU","Motherboard","Input Device","Output Device","Operating System","Network","Internet","GB","Graphics","Calculations","Cooling","Multitasking","Processing","HDD"];
+
+let q=0,xp=0,coins=0,lives=3,level=1;
+let pHP=100,maxPHP=100,eHP=100,maxEHP=100;
+
+function update(){
+xpEl.textContent=xp; coinsEl.textContent=coins; livesEl.textContent=lives;
+levelEl.textContent=level;
+enemyHp.textContent=eHP+" / "+maxEHP;
+playerHp.textContent=pHP+" / "+maxPHP;
+enemyFill.style.width=(eHP/maxEHP*100)+"%";
+playerFill.style.width=(pHP/maxPHP*100)+"%";
+drawParts();
+}
+
+function drawParts(){
+let built=Math.min(parts.length,Math.floor(xp/300));
+partsDiv.innerHTML=parts.map((p,i)=>`<span class="part ${i<built?'done':''}">${p}</span>`).join("");
+}
+
+function loadQ(){
+if(q>=questions.length) q=0;
+let [ques,ans]=questions[q];
+question.textContent=ques;
+
+let opts=[ans];
+while(opts.length<4){
+let w=wrong[Math.floor(Math.random()*wrong.length)];
+if(!opts.includes(w)) opts.push(w);
+}
+opts.sort(()=>Math.random()-0.5);
+
+answers.innerHTML="";
+opts.forEach(o=>{
+let b=document.createElement("button");
+b.textContent=o;
+b.onclick=()=>check(o,ans);
+answers.appendChild(b);
+});
+}
+
+function check(choice,correct){
+if(choice===correct){
+eHP-=20; xp+=50; coins+=20;
+msg.innerHTML="💥 CRITICAL HIT! +50 XP +20 Coins";
+alien.classList.add("hit");
+setTimeout(()=>alien.classList.remove("hit"),300);
+
+if(eHP<=0){
+level++;
+maxEHP+=50;
+eHP=maxEHP;
+bossName.textContent=bosses[(level-1)%bosses.length];
+alien.textContent=level%2===0?"👹":"👾";
+coins+=100;
+msg.innerHTML="🏆 BOSS DEFEATED! +100 Coins";
+}
+}else{
+pHP-=25;
+msg.innerHTML="👾 ALIEN ATTACKED! -25 HP";
+
+if(pHP<=0){
+lives--;
+pHP=maxPHP;
+if(lives<=0){
+alert("Game Over! XP: "+xp);
+location.reload();
+}
+}
+}
+q++;
+update();
+loadQ();
+}
+
+const xpEl=document.getElementById("xp");
+const coinsEl=document.getElementById("coins");
+const livesEl=document.getElementById("lives");
+const levelEl=document.getElementById("level");
+const enemyHp=document.getElementById("enemyHp");
+const playerHp=document.getElementById("playerHp");
+const enemyFill=document.getElementById("enemyFill");
+const playerFill=document.getElementById("playerFill");
+const question=document.getElementById("question");
+const answers=document.getElementById("answers");
+const partsDiv=document.getElementById("parts");
+const msg=document.getElementById("msg");
+const alien=document.getElementById("alien");
+const bossName=document.getElementById("bossName");
+
+update();
+loadQ();
+</script>
+</body>
+</html>
